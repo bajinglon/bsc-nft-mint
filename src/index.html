@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BSC NFT Mint</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --line:#2a313c; --fg:#e6edf3; --mut:#8b949e; --acc:#f0b90b; --ok:#3fb950; --err:#f85149; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:720px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; } h1 span { color:var(--acc); }
+  h2 { font-size:16px; margin:0 0 12px; }
+  .mut { color:var(--mut); font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
+  label { display:block; font-size:13px; color:var(--mut); margin:10px 0 4px; }
+  input, select, textarea { width:100%; padding:10px; border-radius:8px; border:1px solid var(--line); background:#0d1117; color:var(--fg); font-size:14px; }
+  textarea { min-height:60px; resize:vertical; }
+  button { background:var(--acc); color:#000; border:0; border-radius:8px; padding:10px 14px; font-weight:600; font-size:14px; cursor:pointer; margin-top:12px; }
+  button.sec { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:1; min-width:140px; }
+  #status { font-size:14px; } #status b { color:var(--ok); }
+  #wallets button { margin-right:8px; }
+  #log { font-family:ui-monospace,monospace; font-size:12px; white-space:pre-wrap; word-break:break-all; max-height:260px; overflow:auto; }
+  .ok { color:var(--ok); } .err { color:var(--err); }
+  a { color:var(--acc); }
+  .tabs { display:flex; gap:8px; margin-top:16px; }
+  .tabs button { flex:1; margin:0; background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .tabs button.active { background:var(--acc); color:#000; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span>BSC</span> NFT Mint</h1>
+  <div class="mut">Hubungkan wallet Anda, deploy koleksi NFT, lalu mint. Semua transaksi ditandatangani di wallet Anda sendiri; private key tidak pernah keluar dari wallet.</div>
+
+  <div class="card">
+    <h2>1. Hubungkan Wallet</h2>
+    <label for="network">Jaringan</label>
+    <select id="network">
+      <option value="56">BNB Smart Chain (Mainnet)</option>
+      <option value="97">BNB Smart Chain Testnet</option>
+    </select>
+    <div id="wallets"></div>
+    <div id="mobile" class="hidden">
+      <div class="mut" style="margin-top:12px">Wallet tidak terdeteksi di browser ini. Di HP, buka halaman ini dari browser di dalam aplikasi wallet:</div>
+      <div class="row">
+        <a id="mmLink"><button class="sec" style="width:100%">Buka di MetaMask</button></a>
+        <a id="twLink"><button class="sec" style="width:100%">Buka di Trust Wallet</button></a>
+      </div>
+    </div>
+    <p id="status" class="mut">Belum terhubung.</p>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="deploy" class="active">Koleksi Saya</button>
+    <button data-tab="external">Mint Contract Lain</button>
+  </div>
+
+  <section id="tab-deploy">
+    <div class="card">
+      <h2>2. Deploy Koleksi NFT (ERC-721)</h2>
+      <div class="mut">Lewati langkah ini jika sudah punya alamat koleksi dari halaman ini.</div>
+      <div class="row">
+        <div><label for="colName">Nama koleksi</label><input id="colName" placeholder="My NFT" /></div>
+        <div><label for="colSymbol">Simbol</label><input id="colSymbol" placeholder="MNFT" /></div>
+      </div>
+      <button id="deployBtn" disabled>Deploy Koleksi</button>
+    </div>
+
+    <div class="card">
+      <h2>3. Mint NFT</h2>
+      <label for="myContract">Alamat koleksi</label>
+      <input id="myContract" placeholder="0x..." />
+      <label for="recipient">Penerima (kosongkan = wallet Anda)</label>
+      <input id="recipient" placeholder="0x..." />
+      <label for="nftName">Nama NFT</label>
+      <input id="nftName" placeholder="My NFT #1" />
+      <label for="nftDesc">Deskripsi</label>
+      <textarea id="nftDesc" placeholder="Deskripsi NFT"></textarea>
+      <label for="nftImage">URL gambar (https:// atau ipfs://)</label>
+      <input id="nftImage" placeholder="https://.../gambar.png" />
+      <label for="nftUri">Atau token URI sendiri (opsional, menimpa isian di atas)</label>
+      <input id="nftUri" placeholder="ipfs://.../metadata.json" />
+      <button id="mintBtn" disabled>Mint NFT</button>
+    </div>
+  </section>
+
+  <section id="tab-external" class="hidden">
+    <div class="card">
+      <h2>Mint dari Contract yang Sudah Ada</h2>
+      <div class="mut">Isi alamat contract dan nama fungsi mint-nya (lihat tab "Write Contract" di BscScan).</div>
+      <label for="extContract">Alamat contract</label>
+      <input id="extContract" placeholder="0x..." />
+      <button id="readBtn" class="sec">Cek Contract</button>
+      <label for="extFn">Signature fungsi</label>
+      <input id="extFn" placeholder="mint(uint256)" value="mint(uint256)" />
+      <label for="extArgs">Argumen (JSON array)</label>
+      <input id="extArgs" placeholder='[1]' value="[1]" />
+      <label for="extValue">Harga yang dibayar (BNB)</label>
+      <input id="extValue" placeholder="0" value="0" />
+      <button id="extBtn" disabled>Kirim Transaksi Mint</button>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div id="log" class="mut">-</div>
+  </div>
+</main>
+<script>/*APP*/</script>
+</body>
+</html>
